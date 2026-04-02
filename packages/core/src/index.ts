@@ -7,3 +7,4 @@ export type {
 export { AgentStore, type RegisteredAgent, type AgentMetrics } from './registry/store.js';
 export { createRegistryServer, type RegistryOptions } from './registry/server.js';
 export { HealthCheckManager } from './registry/health.js';
+export { TaskManager } from './a2a/task-manager.js';
