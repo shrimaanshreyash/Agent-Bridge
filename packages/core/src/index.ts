@@ -14,3 +14,5 @@ export { BaseAgent } from './agent/base-agent.js';
 export { MessageBus, type BusEvent, type BusEventInput } from './bus/bus.js';
 export { agentToMcpTool, type McpToolDef } from './mcp/tool-bridge.js';
 export { createMcpBridgeServer, type McpBridgeOptions } from './mcp/server.js';
+export { parseComposeFile, type ComposeConfig } from './compose/parser.js';
+export { WorkflowExecutor, type WorkflowDef, type WorkflowStep } from './compose/executor.js';

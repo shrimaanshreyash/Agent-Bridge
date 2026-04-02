@@ -1,0 +1,60 @@
+# agentbridge.yaml — AgentBridge Demo Pipeline
+name: code-quality-pipeline
+version: 1.0.0
+
+registry:
+  port: 6100
+
+agents:
+  code-review:
+    path: ./agents/code-review
+    port: 6101
+    env:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      MODEL: deepseek/deepseek-chat
+
+  test-writer:
+    path: ./agents/test-writer
+    port: 6102
+    env:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      MODEL: deepseek/deepseek-chat
+
+  doc-generator:
+    path: ./agents/doc-generator
+    port: 6103
+    env:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      MODEL: deepseek/deepseek-chat
+
+workflows:
+  full-review:
+    description: "Complete code quality pipeline"
+    steps:
+      - agent: code-review
+        input: $input
+        output: $review
+
+      - agent: test-writer
+        input: $review.code
+        output: $tests
+        condition: $review.score < 90
+
+      - agent: doc-generator
+        input:
+          code: $input.code
+          review: $review
+        output: $docs
+
+    output:
+      review: $review
+      tests: $tests
+      docs: $docs
+
+dashboard:
+  enabled: true
+  port: 6140
+
+mcp:
+  enabled: true
+  transport: stdio
