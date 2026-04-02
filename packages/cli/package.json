@@ -1,0 +1,31 @@
+{
+  "name": "@agentbridge/cli",
+  "version": "0.1.0",
+  "description": "CLI for AgentBridge — scaffold, run, and manage AI agents",
+  "type": "module",
+  "bin": {
+    "agentbridge": "./dist/bin/agentbridge.js"
+  },
+  "main": "dist/src/index.js",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "@agentbridge/core": "*",
+    "commander": "^12.1.0",
+    "inquirer": "^12.0.0",
+    "chalk": "^5.3.0",
+    "ora": "^8.1.0",
+    "cli-table3": "^0.6.5",
+    "chokidar": "^4.0.0",
+    "yaml": "^2.5.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.0",
+    "typescript": "^5.5.0",
+    "@types/node": "^22.0.0"
+  }
+}
