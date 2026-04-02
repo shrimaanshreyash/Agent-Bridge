@@ -9,3 +9,4 @@ export { createRegistryServer, type RegistryOptions } from './registry/server.js
 export { HealthCheckManager } from './registry/health.js';
 export { TaskManager } from './a2a/task-manager.js';
 export { A2AClient } from './a2a/client.js';
+export { createA2AServer, type A2AServerOptions } from './a2a/server.js';
