@@ -1,0 +1,11 @@
+name: test-writer
+description: Generates unit tests from source code
+version: 1.0.0
+capabilities:
+  - testing
+  - unit-tests
+  - test-generation
+port: 6102
+env:
+  OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+  MODEL: deepseek/deepseek-chat

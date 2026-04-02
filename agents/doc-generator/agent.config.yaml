@@ -1,0 +1,11 @@
+name: doc-generator
+description: Generates documentation from source code
+version: 1.0.0
+capabilities:
+  - documentation
+  - markdown
+  - api-docs
+port: 6103
+env:
+  OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+  MODEL: deepseek/deepseek-chat

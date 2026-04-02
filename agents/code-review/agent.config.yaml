@@ -1,0 +1,11 @@
+name: code-review
+description: Reviews code for bugs, security issues, and best practices
+version: 1.0.0
+capabilities:
+  - code-review
+  - security-scan
+  - best-practices
+port: 6101
+env:
+  OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+  MODEL: deepseek/deepseek-chat
