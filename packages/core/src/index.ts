@@ -5,3 +5,5 @@ export type {
   JsonRpcRequest, JsonRpcResponse,
 } from './a2a/types.js';
 export { AgentStore, type RegisteredAgent, type AgentMetrics } from './registry/store.js';
+export { createRegistryServer, type RegistryOptions } from './registry/server.js';
+export { HealthCheckManager } from './registry/health.js';
