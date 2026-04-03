@@ -1,0 +1,35 @@
+name: basic-pipeline
+version: 1.0.0
+
+registry:
+  port: 6100
+
+agents:
+  code-review:
+    path: ../../agents/code-review
+    port: 6101
+    env:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+
+  doc-generator:
+    path: ../../agents/doc-generator
+    port: 6103
+    env:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+
+workflows:
+  review-and-doc:
+    description: "Review code then generate docs"
+    steps:
+      - agent: code-review
+        input: $input
+        output: $review
+      - agent: doc-generator
+        input:
+          code: $input.code
+          review: $review
+        output: $docs
+
+dashboard:
+  enabled: true
+  port: 6140
