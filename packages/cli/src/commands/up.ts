@@ -36,7 +36,7 @@ export const upCommand = new Command('up')
       log.info(`Starting agent "${name}" on port ${port}...`);
 
       const env = { ...process.env, ...agentConf.env, PORT: String(port), REGISTRY_URL: `http://localhost:${registryPort}` };
-      const child = spawn('npx', ['tsx', join(agentPath, 'agent.ts')], { env, stdio: 'pipe', shell: true });
+      const child = spawn('npx', ['tsx', join(agentPath, 'agent.ts')], { env, stdio: 'pipe' });
       child.stdout?.on('data', (data) => log.dim(`[${name}] ${data.toString().trim()}`));
       child.stderr?.on('data', (data) => log.warn(`[${name}] ${data.toString().trim()}`));
       child.on('exit', (code) => log.warn(`[${name}] exited with code ${code}`));

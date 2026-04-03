@@ -10,7 +10,8 @@ export interface A2AServerOptions {
 export function createA2AServer(options: A2AServerOptions) {
   const { card, handler } = options;
   const app = express();
-  app.use(express.json());
+  app.disable('x-powered-by');
+  app.use(express.json({ limit: '1mb' }));
   const taskManager = new TaskManager();
 
   app.get('/.well-known/agent-card.json', (_req, res) => { res.json(card); });

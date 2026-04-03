@@ -74,6 +74,10 @@ export abstract class BaseAgent {
         messages: [{ role: 'user', content: prompt }],
       }),
     });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`OpenRouter error ${res.status}: ${err}`);
+    }
     const body = (await res.json()) as { choices: { message: { content: string } }[] };
     return body.choices[0]?.message?.content ?? '';
   }

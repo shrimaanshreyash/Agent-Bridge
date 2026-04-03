@@ -10,7 +10,8 @@ export interface RegistryOptions {
 
 export function createRegistryServer(options: RegistryOptions = {}) {
   const app = express();
-  app.use(express.json());
+  app.disable('x-powered-by');
+  app.use(express.json({ limit: '1mb' }));
 
   const store = new AgentStore();
   const wsClients = new Set<WebSocket>();
@@ -41,7 +42,22 @@ export function createRegistryServer(options: RegistryOptions = {}) {
 
   app.post('/agents', (req, res) => {
     const card = req.body as A2AAgentCard;
-    if (!card.name) { res.status(400).json({ error: 'Agent card must have a name' }); return; }
+    if (!card.name || !/^[a-z0-9-]+$/.test(card.name)) {
+      res.status(400).json({ error: 'Agent name must be kebab-case (a-z, 0-9, hyphens)' });
+      return;
+    }
+    if (card.url) {
+      try {
+        const u = new URL(card.url);
+        if (!['http:', 'https:'].includes(u.protocol)) {
+          res.status(400).json({ error: 'Agent URL must use http or https' });
+          return;
+        }
+      } catch {
+        res.status(400).json({ error: 'Invalid agent URL' });
+        return;
+      }
+    }
     store.register(card);
     broadcast({ type: 'agent_registered', name: card.name, timestamp: new Date().toISOString() });
     res.status(201).json(card);
