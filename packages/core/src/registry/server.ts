@@ -237,7 +237,7 @@ export function createRegistryServer(options: RegistryOptions = {}) {
   app.get('/workflows', (_req, res) => { res.json(workflows); });
 
   // ── Production dashboard (served from built dist folder) ──────────────────
-  const dashboardDist = resolve(__dirname, '../../../dashboard/dist');
+  const dashboardDist = resolve(__dirname, '../../dashboard/dist');
   if (existsSync(dashboardDist)) {
     app.use(express.static(dashboardDist));
     // SPA catch-all: serve index.html for any non-API route
