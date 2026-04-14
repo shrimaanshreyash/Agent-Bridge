@@ -27,7 +27,7 @@ Claude Code / Cursor / Copilot
 
 ## Quick Start
 
-**Prerequisites:** Node 20+, an [OpenRouter API key](https://openrouter.ai/keys) (free)
+**Prerequisites:** Node 20+, an [OpenRouter API key](https://openrouter.ai/keys)
 
 ```bash
 git clone https://github.com/shrimaanshreyash/Agent-Bridge
