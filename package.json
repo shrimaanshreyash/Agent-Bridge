@@ -9,7 +9,9 @@
   ],
   "scripts": {
     "build": "turbo build",
+    "build:dashboard": "npm run build --workspace=packages/dashboard",
     "dev": "turbo dev",
+    "start": "npx tsx packages/cli/src/index.ts up",
     "test": "turbo test",
     "lint": "turbo lint",
     "clean": "turbo clean"

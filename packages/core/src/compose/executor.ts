@@ -29,11 +29,18 @@ export class WorkflowExecutor {
       const agentUrl = this.agentUrls.get(step.agent);
       if (!agentUrl) throw new Error(`Agent "${step.agent}" not found`);
 
-      const resolvedInput = this.resolveRefs(step.input, context);
+      // If no input is specified for a step, pass the original workflow input
+      const resolvedInput = step.input != null
+        ? this.resolveRefs(step.input, context)
+        : context.input;
+
+      const inputData = (resolvedInput && typeof resolvedInput === 'object')
+        ? resolvedInput as Record<string, unknown>
+        : { input: resolvedInput };
 
       const result = await this.a2aClient.sendTask(agentUrl, {
         role: 'user',
-        parts: [{ type: 'data', data: resolvedInput as Record<string, unknown> }],
+        parts: [{ type: 'data', data: inputData }],
       });
 
       if (result.status === 'failed') throw new Error(`Agent "${step.agent}" failed: ${result.error?.message}`);

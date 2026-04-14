@@ -1,29 +1,38 @@
 import { BaseAgent } from '@agentbridge/core';
 import type { AgentConfig } from '@agentbridge/core';
-import { docPrompt } from './prompts.js';
+import { SYSTEM_PROMPT, docPrompt } from './prompts.js';
 
 class DocGeneratorAgent extends BaseAgent {
   config: AgentConfig = {
     name: 'doc-generator',
-    description: 'Generates documentation from source code',
+    description: 'Generates professional documentation from source code. Supports README, JSDoc/TSDoc, and API reference formats.',
     version: '1.0.0',
-    capabilities: ['documentation', 'markdown', 'api-docs'],
+    capabilities: ['documentation', 'markdown', 'api-docs', 'jsdoc'],
     inputs: {
       code: { type: 'string', required: true, description: 'Source code to document' },
-      format: { type: 'string', description: 'Doc format: readme, jsdoc, api-reference' },
+      format: { type: 'string', description: 'Output format: readme | jsdoc | api-reference (default: readme)' },
     },
     outputs: {
-      documentation: { type: 'string', description: 'Generated markdown' },
-      sections: { type: 'array', description: 'Section titles' },
+      documentation: { type: 'string', description: 'Generated markdown documentation' },
+      sections: { type: 'array', description: 'List of section headings in order' },
     },
   };
 
   async execute(input: Record<string, unknown>): Promise<Record<string, unknown>> {
-    const code = input.code as string;
-    const format = (input.format as string) ?? 'readme';
-    const response = await this.callLLM(docPrompt(code, format));
-    try { return JSON.parse(response); }
-    catch { return { documentation: response, sections: [] }; }
+    const code = (input.code ?? input.input ?? input.text ?? '') as string;
+    if (!code.trim()) {
+      return { documentation: 'No code provided.', sections: [] };
+    }
+    const format = (input.format as string | undefined) ?? 'readme';
+
+    const raw = await this.callLLM(docPrompt(code, format), { system: SYSTEM_PROMPT });
+    const parsed = this.parseJSON<{ documentation?: string; sections?: string[] }>(raw, {});
+
+    return {
+      documentation: parsed.documentation ?? raw,
+      sections: Array.isArray(parsed.sections) ? parsed.sections : [],
+      format,
+    };
   }
 }
 

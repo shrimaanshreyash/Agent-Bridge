@@ -11,39 +11,37 @@ agents:
     port: 6101
     env:
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
-      MODEL: deepseek/deepseek-chat
+      MODEL: google/gemini-2.5-flash-lite
 
   test-writer:
     path: ./agents/test-writer
     port: 6102
     env:
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
-      MODEL: deepseek/deepseek-chat
+      MODEL: google/gemini-2.5-flash-lite
 
   doc-generator:
     path: ./agents/doc-generator
     port: 6103
     env:
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
-      MODEL: deepseek/deepseek-chat
+      MODEL: google/gemini-2.5-flash-lite
 
 workflows:
   full-review:
-    description: "Complete code quality pipeline"
+    description: "Complete code quality pipeline: review → tests → docs"
     steps:
       - agent: code-review
         input: $input
         output: $review
 
       - agent: test-writer
-        input: $review.code
+        input: $input
         output: $tests
         condition: $review.score < 90
 
       - agent: doc-generator
-        input:
-          code: $input.code
-          review: $review
+        input: $input
         output: $docs
 
     output:

@@ -2,10 +2,14 @@ import { useMetrics } from '../hooks/useMetrics.js';
 import { NumberTicker } from '../components/NumberTicker.js';
 import { ProgressBar } from '../components/ProgressBar.js';
 import { StatusDot } from '../components/StatusDot.js';
+import { OfflineState } from '../components/OfflineState.js';
 import { glass } from '../lib/theme.js';
 
 export function Health() {
-  const { metrics, loading } = useMetrics();
+  const { metrics, loading, error } = useMetrics();
+  if (error) {
+    return (<div><h1 className="text-2xl font-bold mb-6">Health & Metrics</h1><OfflineState /></div>);
+  }
   if (loading || !metrics) {
     return (<div><h1 className="text-2xl font-bold mb-6">Health & Metrics</h1>
       <div className="text-zinc-500">Loading metrics...</div></div>);

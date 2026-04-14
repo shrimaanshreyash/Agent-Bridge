@@ -8,6 +8,7 @@ const statusBadge: Record<string, string> = {
   task_failed: 'bg-red-500/20 text-red-300 border-red-500/30',
   agent_registered: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
   agent_removed: 'bg-zinc-500/20 text-zinc-300 border-zinc-500/30',
+  health_change: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
 };
 
 export function MessageRow({ timestamp, type, from, to, taskId, latencyMs }: MessageRowProps) {

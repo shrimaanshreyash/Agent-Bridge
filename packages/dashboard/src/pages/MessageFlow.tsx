@@ -5,7 +5,7 @@ import { useWebSocket } from '../hooks/useWebSocket.js';
 import { MessageRow } from '../components/MessageRow.js';
 
 export function MessageFlow() {
-  const { messages, connected } = useWebSocket(`ws://${window.location.hostname}:6100/ws`);
+  const { messages, connected } = useWebSocket(`ws://${window.location.host}/ws`);
   const [paused, setPaused] = useState(false);
   const [filter, setFilter] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -14,7 +14,14 @@ export function MessageFlow() {
     if (!paused && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, paused]);
 
-  const filtered = messages.filter((m) => {
+  const enriched = messages.map((m) => ({
+    ...m,
+    from: m.from ?? m.name ?? undefined,
+    to: m.to ?? (m.type === 'agent_registered' ? 'registry' : m.type === 'task_completed' ? m.name : undefined),
+    latencyMs: m.latencyMs ?? m.responseMs ?? undefined,
+  }));
+
+  const filtered = enriched.filter((m) => {
     if (!filter) return true;
     return m.type?.includes(filter) || m.from?.includes(filter) || m.to?.includes(filter) || m.taskId?.includes(filter);
   });

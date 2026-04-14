@@ -1,166 +1,211 @@
 # AgentBridge
 
-> **MCP + A2A framework for building, registering, discovering, and orchestrating AI agents.**
+> **The missing bridge between AI agents and the tools developers already use.**
 
-Build agents that are automatically usable from **Claude Code**, **Cursor**, and **Copilot** (via MCP) — and can communicate with each other (via A2A).
+AgentBridge connects **A2A agents** (Google's Agent-to-Agent protocol) to **MCP clients** (Claude Code, Cursor, Copilot) — so your agents automatically appear as tools inside your IDE with zero per-agent configuration.
 
-**"Docker Compose — but for AI agents."**
+```
+Claude Code / Cursor / Copilot
+        ↕  MCP
+  AgentBridge Registry  ←──── agents register themselves
+        ↕  A2A
+  code-review · test-writer · doc-generator · your-agent
+```
+
+---
+
+## Why AgentBridge?
+
+| Without AgentBridge | With AgentBridge |
+|---|---|
+| Configure each agent manually in every MCP client | Register once → available everywhere automatically |
+| Agents can't talk to each other | Agents call each other via A2A protocol |
+| No visibility into what agents are doing | Real-time dashboard: messages, health, latency |
+| Testing agents requires terminal commands | Click → type → run from the dashboard UI |
+
+---
 
 ## Quick Start
 
+**Prerequisites:** Node 20+, an [OpenRouter API key](https://openrouter.ai/keys) (free)
+
 ```bash
-# Install
-npm install @agentbridge/core @agentbridge/cli
-
-# Scaffold a new agent
-npx agentbridge init my-agent
-
-# Start everything
-npx agentbridge up
+git clone https://github.com/shrimaanshreyash/Agent-Bridge
+cd Agent-Bridge
+npm install
+cp .env.example .env   # add your OPENROUTER_API_KEY
+npm run build:dashboard
+node packages/cli/dist/bin/agentbridge.js up
 ```
 
-## Architecture
+Open **http://localhost:6100** — the dashboard is live with 3 agents running.
 
-```
-Claude Code / Cursor ←──MCP──→ AgentBridge Registry ←──A2A──→ Your Agents
-                                      ↓
-                               Web Dashboard (real-time)
-```
+---
 
-- **Build** agents with a dead-simple SDK — extend `BaseAgent`, implement `execute()`
-- **Register** agents with an A2A-compatible registry (auto-discovery)
-- **Bridge** agents to any MCP client — agents become tools automatically
-- **Orchestrate** multi-agent workflows via YAML compose files
-- **Monitor** everything via a real-time dashboard
-
-## Define an Agent (30 seconds)
+## Build an Agent in 30 Seconds
 
 ```typescript
 import { BaseAgent } from '@agentbridge/core';
 
-class MyAgent extends BaseAgent {
+class SummarizerAgent extends BaseAgent {
   config = {
-    name: 'my-agent',
-    description: 'Does something useful',
+    name: 'summarizer',
+    description: 'Summarizes any text in 3 bullet points',
     version: '1.0.0',
-    capabilities: ['analysis'],
-    inputs: { text: { type: 'string', required: true } },
-    outputs: { result: { type: 'string' } },
+    capabilities: ['summarization', 'nlp'],
+    inputs: { input: { type: 'string', required: true } },
+    outputs: { summary: { type: 'string' } },
   };
 
-  async execute(input) {
-    const response = await this.callLLM(`Analyze: ${input.text}`);
-    return { result: response };
+  async execute(input: Record<string, unknown>) {
+    const text = (input.input ?? input.text ?? '') as string;
+    const summary = await this.callLLM(`Summarize in 3 bullets:\n\n${text}`, {
+      system: 'You are a concise summarizer. Always return exactly 3 bullet points.',
+    });
+    return { summary };
   }
 }
+
+const agent = new SummarizerAgent();
+agent.start(6104, 'http://localhost:6100');
 ```
 
-## Compose Multi-Agent Workflows
+Scaffold with the CLI:
+```bash
+node packages/cli/dist/bin/agentbridge.js init my-agent
+```
+
+---
+
+## Multi-Agent Workflows (YAML)
+
+Define pipelines in `agentbridge.yaml`:
 
 ```yaml
-# agentbridge.yaml
-name: code-quality-pipeline
-
-agents:
-  code-review:
-    path: ./agents/code-review
-    port: 6101
-  test-writer:
-    path: ./agents/test-writer
-    port: 6102
-
 workflows:
-  full-review:
+  code-quality:
+    description: "Review code → write tests → generate docs"
     steps:
       - agent: code-review
         input: $input
         output: $review
       - agent: test-writer
-        input: $review
+        input: $input
         output: $tests
         condition: $review.score < 90
-
-dashboard:
-  enabled: true
-  port: 6140
+      - agent: doc-generator
+        input: $input
+        output: $docs
 ```
+
+---
+
+## Use Agents in Claude Code (MCP)
 
 ```bash
-npx agentbridge up
+# Terminal 1 — start agents
+node packages/cli/dist/bin/agentbridge.js up
+
+# Terminal 2 — start MCP bridge
+node packages/cli/dist/bin/agentbridge.js mcp
 ```
 
-## Claude Code Integration
-
-Add to `.mcp.json`:
-
+Add to your Claude Code MCP config:
 ```json
 {
   "mcpServers": {
     "agentbridge": {
-      "command": "npx",
-      "args": ["agentbridge", "mcp"]
+      "command": "node",
+      "args": ["packages/cli/dist/bin/agentbridge.js", "mcp"],
+      "env": { "AGENTBRIDGE_REGISTRY": "http://localhost:6100" }
     }
   }
 }
 ```
 
-Your agents appear as tools in Claude Code automatically.
+Every registered agent appears as a tool — automatically, no additional config.
 
-## Framework Adapters
+---
 
-Bring existing agents from other frameworks into AgentBridge:
+## Bring Your Own Framework
+
+AgentBridge wraps existing agents without rewriting them:
 
 ```typescript
 import { LangChainAdapter } from '@agentbridge/adapter-langchain';
 
-const agent = new LangChainAdapter({
-  name: 'research-agent',
-  description: 'Research using LangChain',
+const adapter = new LangChainAdapter({
+  name: 'my-langchain-agent',
+  description: 'Existing LangChain agent',
   capabilities: ['research'],
-  agent: myLangChainAgent,
+  agent: myExistingChain, // RunnableSequence / AgentExecutor
 });
 
-await agent.start(6110);
-await agent.register('http://localhost:6100');
+await adapter.start(6105);
+await adapter.register('http://localhost:6100');
 ```
 
-Adapters available for: **LangChain**, **CrewAI**, **OpenAI Agents SDK**
+Adapters available: **LangChain**, **OpenAI Agents SDK**, **CrewAI**
+
+---
 
 ## Dashboard
 
-Real-time monitoring at `http://localhost:6140`:
+Open `http://localhost:6100` while `agentbridge up` is running.
 
-- **Registry** — Agent cards with status, capabilities, metrics
-- **Message Flow** — Live WebSocket stream of all agent communication
-- **Workflows** — Visual DAG of multi-agent pipelines (React Flow)
-- **Health** — Response times, success rates, per-agent metrics
-
-## Packages
-
-| Package | Description |
+| Page | What you see |
 |---|---|
-| `@agentbridge/core` | Agent SDK, registry, A2A, MCP bridge, message bus, compose engine |
-| `@agentbridge/cli` | CLI for scaffolding, running, and managing agents |
-| `@agentbridge/dashboard` | Real-time monitoring dashboard |
-| `@agentbridge/adapter-langchain` | LangChain adapter |
-| `@agentbridge/adapter-crewai` | CrewAI adapter |
-| `@agentbridge/adapter-openai-agents` | OpenAI Agents SDK adapter |
+| **Registry** | All agents with status — click any to test it live from the browser |
+| **Messages** | Real-time feed of every agent call with latency |
+| **Workflows** | Interactive graph of your pipelines — drag nodes freely |
+| **Health** | Success rates, response times (avg / p95 / p99) per agent |
 
-## CLI Commands
+---
 
-| Command | Description |
-|---|---|
-| `npx agentbridge init [name]` | Scaffold a new agent |
-| `npx agentbridge up` | Start everything from YAML |
-| `npx agentbridge list` | List registered agents |
-| `npx agentbridge call [agent] [input]` | Invoke an agent |
-| `npx agentbridge mcp` | Start MCP server |
-| `npx agentbridge dashboard` | Start dashboard |
+## CLI Reference
 
-## Tech Stack
+```bash
+agentbridge up                    # Start registry + all agents from agentbridge.yaml
+agentbridge mcp                   # Start MCP bridge for Claude Code / Cursor
+agentbridge dashboard             # Start dashboard standalone
+agentbridge list                  # List registered agents
+agentbridge call <name> <input>   # Invoke an agent from terminal
+agentbridge init <name>           # Scaffold a new agent
+agentbridge register [path]       # Manually register an agent
+```
 
-TypeScript, Express, @modelcontextprotocol/sdk, React 19, Vite, Tailwind CSS, Framer Motion, React Flow, Turborepo
+---
+
+## Project Structure
+
+```
+AgentBridge/
+├── packages/
+│   ├── core/                  — Registry, A2A protocol, BaseAgent, MCP bridge
+│   ├── cli/                   — CLI commands
+│   ├── dashboard/             — React dashboard (Vite + Tailwind + ReactFlow)
+│   ├── adapter-langchain/
+│   ├── adapter-openai-agents/
+│   └── adapter-crewai/
+└── agents/
+    ├── code-review/           — Reviews code for bugs, security, best practices
+    ├── test-writer/           — Generates unit tests (vitest / jest / mocha)
+    └── doc-generator/         — Generates README, JSDoc, or API reference docs
+```
+
+---
+
+## Configuration
+
+| Variable | Description | Default |
+|---|---|---|
+| `OPENROUTER_API_KEY` | Required — get one free at openrouter.ai | — |
+| `MODEL` | LLM model via OpenRouter | `google/gemini-2.5-flash-lite` |
+
+Recommended models: `google/gemini-2.5-flash-lite` (default, fast + cheap), `anthropic/claude-3-haiku` (reliable JSON), `openai/gpt-4o-mini` (strong reasoning).
+
+---
 
 ## License
 
-MIT
+MIT © 2026 Vemula Srimaan Shreyas

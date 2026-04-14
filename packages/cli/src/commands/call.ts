@@ -18,11 +18,20 @@ export const callCommand = new Command('call')
       try { data = JSON.parse(input); } catch { data = { input }; }
 
       const client = new A2AClient();
+      const startTime = Date.now();
       const result = await client.sendTask(agent.card.url, {
         role: 'user', parts: [{ type: 'data', data }],
       });
+      const responseMs = Date.now() - startTime;
 
-      if (result.status === 'failed') { log.error(`Error: ${result.error?.message}`); return; }
+      const success = result.status !== 'failed';
+      fetch(`${opts.registry}/agents/${agentName}/tasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ success, responseMs, taskId: result.id }),
+      }).catch(() => {});
+
+      if (!success) { log.error(`Error: ${result.error?.message}`); return; }
 
       const textPart = result.result?.parts.find((p) => p.type === 'text');
       const dataPart = result.result?.parts.find((p) => p.type === 'data');

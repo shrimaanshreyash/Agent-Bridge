@@ -4,10 +4,17 @@ import { fetchAgents } from '../lib/api.js';
 export function useAgents(pollInterval = 5000) {
   const [agents, setAgents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
-      try { const data = await fetchAgents(); setAgents(data); } catch {}
+      try {
+        const data = await fetchAgents();
+        setAgents(data);
+        setError(null);
+      } catch {
+        setError('Cannot reach registry. Is `agentbridge up` running?');
+      }
       setLoading(false);
     }
     load();
@@ -15,5 +22,5 @@ export function useAgents(pollInterval = 5000) {
     return () => clearInterval(interval);
   }, [pollInterval]);
 
-  return { agents, loading };
+  return { agents, loading, error };
 }

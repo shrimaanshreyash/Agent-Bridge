@@ -8,4 +8,4 @@ capabilities:
 port: 6103
 env:
   OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
-  MODEL: deepseek/deepseek-chat
+  MODEL: google/gemini-2.5-flash-lite
